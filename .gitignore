@@ -1,0 +1,5 @@
+*.out
+*.test
+printast/printast
+temp
+gofloat/svg.txt
