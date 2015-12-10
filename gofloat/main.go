@@ -57,6 +57,7 @@ func dir(fromDir string, cfg Config, repo Repository,
 		return err
 	}
 	// phase 2: fix type conflicts
+	logg.Printf("- Fix type conflicts ...\n")
 	prevN := maxInt
 	n := prevN - 1
 	count := 0
@@ -77,9 +78,9 @@ func dir(fromDir string, cfg Config, repo Repository,
 		count += n
 	}
 	if count == 0 {
-		logg.Printf("- No type conflicts\n")
+		logg.Printf("  ... no type conflicts found.\n")
 	} else {
-		logg.Printf("- Fixed %d type conflicts ", count)
+		logg.Printf("  ... fixed %d type conflicts.\n", count)
 	}
 	// phase 3: fix format verbs
 	logg.Printf("- Format %q ...\n", toRepo)
@@ -90,9 +91,12 @@ func dir(fromDir string, cfg Config, repo Repository,
 	if err := pkgs.Error(); err != nil { // no type error allowed
 		return err
 	}
-	if err := pkgs.Format(cfg.FromType, cfg.FormatFunc,
+	if err := pkgs.Format(cfg.FromType, cfg.FormatVar, cfg.FormatFunc,
 		cfg.Printf); err != nil {
-		return err
+		logg.Printf("  Please fix: %s\n- SKIP\n\n", err)
+		_ = os.RemoveAll(toDir) // discard error
+		// allow these errors to be fixed
+		return nil
 	}
 	if err := pkgs.Save(toDir); err != nil {
 		return err
@@ -108,10 +112,11 @@ func dir(fromDir string, cfg Config, repo Repository,
 		logg.Printf("- Applied one patch to %q ...\n", toRepo)
 	}
 	// phase 5: copy non-go files (utils.go)
-	logg.Printf("- Copy non-go files of %q ...\n\n", toRepo)
+	logg.Printf("- Copy non-go files of %q ...\n", toRepo)
 	if err := copyFiles(fromDir, toDir, cfg.ReadMe); err != nil {
 		return err
 	}
+	logg.Printf("- OK\n\n")
 	return nil
 }
 

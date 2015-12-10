@@ -28,6 +28,7 @@ type Patch struct {
 // Config can be applied to multiple destination repositories.
 type Config struct {
 	Footer     map[string][]byte
+	FormatVar  packages.Set
 	FormatFunc map[string]string
 	From       string
 	FromType   string
@@ -41,6 +42,7 @@ type Config struct {
 
 type configData struct {
 	Footer     map[string][]string
+	FormatVar  []string // allow non-constant format in call to FormatFunc
 	FormatFunc map[string]string
 	From       string
 	FromType   string
@@ -81,6 +83,10 @@ func Open(path string) ([]Repository, Config, error) {
 		if d.Repos[i].ToType == "" {
 			d.Repos[i].ToType = "float64"
 		}
+	}
+	cfg.FormatVar = map[string]struct{}{}
+	for _, name := range cfgd.FormatVar {
+		cfg.FormatVar[name] = struct{}{}
 	}
 	cfg.FormatFunc = cfgd.FormatFunc
 	cfg.From = cfgd.From

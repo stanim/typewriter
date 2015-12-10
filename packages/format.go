@@ -39,9 +39,9 @@ var (
 
 // Format fixes string format functions such as Printf, Errorf, ...
 // in all packages.
-func (pkgs *Packages) Format(fromType string, formatFunc map[string]string, printf map[string]int) error {
+func (pkgs *Packages) Format(fromType string, formatVar map[string]struct{}, formatFunc map[string]string, printf map[string]int) error {
 	for _, pkg := range *pkgs {
-		if err := pkg.Format(fromType, formatFunc, printf); err != nil {
+		if err := pkg.Format(fromType, formatVar, formatFunc, printf); err != nil {
 			return err
 		}
 	}
@@ -50,8 +50,10 @@ func (pkgs *Packages) Format(fromType string, formatFunc map[string]string, prin
 
 // Format fixes string format functions such as Printf, Errorf, ...
 // in a package.
-func (pkg *Package) Format(fromType string, formatFunc map[string]string, printf map[string]int) error {
-	return pkg.Walk(newFormatter(pkg, fromType, formatFunc, printf))
+func (pkg *Package) Format(fromType string,
+	formatVar map[string]struct{}, formatFunc map[string]string,
+	printf map[string]int) error {
+	return pkg.Walk(newFormatter(pkg, fromType, formatVar, formatFunc, printf))
 }
 
 // formatter fixes format strings in the files of a package
@@ -60,6 +62,8 @@ func (pkg *Package) Format(fromType string, formatFunc map[string]string, printf
 type formatter struct {
 	pkg         *Package
 	fromRune    uint8
+	formatVars  map[string]struct{}
+	formatVar   bool
 	formatFuncs map[string]string
 	formatFunc  string
 	printf      map[string]int
@@ -67,10 +71,13 @@ type formatter struct {
 }
 
 // newFormatter creates a new formatter.
-func newFormatter(pkg *Package, fromType string, formatFunc map[string]string, printf map[string]int) *formatter {
+func newFormatter(pkg *Package, fromType string,
+	formatVar map[string]struct{}, formatFunc map[string]string,
+	printf map[string]int) *formatter {
 	return &formatter{
 		pkg:         pkg,
 		fromRune:    verbRune[fromType],
+		formatVars:  formatVar,
 		formatFuncs: formatFunc,
 		printf:      printf,
 		err:         nil,
@@ -89,6 +96,8 @@ func (f *formatter) Visit(node ast.Node) ast.Visitor {
 		return f.callExpr(n)
 	case *ast.File:
 		base := base(Filename(f.pkg.Fset, n))
+		_, f.formatVar = f.formatVars[base]
+		fmt.Println("formatter.fv = ", f.formatVar, base)
 		f.formatFunc = f.formatFuncs[base]
 	}
 	return f
@@ -135,11 +144,13 @@ func (f *formatter) checkPrintf(call *ast.CallExpr, name string,
 	arg := call.Args[formatIndex]
 	lit := f.pkg.Info.Types[arg].Value
 	if lit == nil {
-		/* allow
-		src, _ := str(f.pkg.Fset, arg)
-		f.setError("%s: can't check non-constant format %q in call to %s.",
-			f.pkg.Fset.Position(arg.Pos()), src, name)
-		*/
+		// allow non-constant format by filename
+		if !f.formatVar {
+			// same warning as eg "go tool vet -v planets.go"
+			src, _ := str(f.pkg.Fset, arg)
+			f.setError("%s: can't check non-constant format %q in call to %s.",
+				f.pkg.Fset.Position(arg.Pos()), src, name)
+		}
 		return
 	}
 	if lit.Kind() != exact.String {
