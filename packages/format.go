@@ -97,7 +97,6 @@ func (f *formatter) Visit(node ast.Node) ast.Visitor {
 	case *ast.File:
 		base := base(Filename(f.pkg.Fset, n))
 		_, f.formatVar = f.formatVars[base]
-		fmt.Println("formatter.fv = ", f.formatVar, base)
 		f.formatFunc = f.formatFuncs[base]
 	}
 	return f

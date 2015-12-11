@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -66,7 +65,6 @@ func patch(dirname string, header []byte, patches map[string][]Patch,
 			return 0, context(err)
 		}
 		source := string(buf)
-		fmt.Println(base)
 		ps, ok := patches[base]
 		if ok {
 			for _, patch := range ps {

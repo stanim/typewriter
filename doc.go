@@ -32,5 +32,26 @@ As a test the
 svgo_test.sh bash script can be run to generate the different examples
 with the generated float64 version of svgo (svgofloat).
 
+The configuration file svgo.json contains a patch which adds a method
+(SetFloatDecimals) to svgo to specify the float decimal precision
+(default is 2), which can be changed on the fly:
+
+  width := 500.0
+  height := 500.0
+  canvas := svg.New(os.Stdout)
+  canvas.Start(width, height)
+  canvas.SetFloatDecimals(4)
+  canvas.Circle(width/2, height/2, 100)
+  canvas.SetFloatDecimals(8)
+  canvas.Text(width/2, height/2, "Hello, SVG", "text-anchor:middle;")
+  canvas.End()
+
+Non significant zeros will be stripped. For example:
+
+  5.00000000000
+
+will become just:
+
+  5
 */
 package typewriter
