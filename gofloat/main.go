@@ -13,6 +13,7 @@ Install it first:
 Apply it it to a configuration file. For example to convert svgo from
 ints to floats:
 
+  $ gofloat svgo.json
   Open "svgo.json" ...
   github.com/ajstarks/svgo -> github.com/stanim/svgotest:
   - Empty "github.com/stanim/svgotest" ...
@@ -57,7 +58,7 @@ It uses 4 phases:
 2) Fix all type conflicts:
 for example make sure that all slice indices are integers.
 
-3) Fix format arguments in printf functions.
+3) Fix format arguments in printf functions. ("%d" becomes "%f")
 
 4) Apply patches and add header/footer if necessary.
 
@@ -65,9 +66,9 @@ See the package 'packages' for more information.
 
 Limitations
 
-1) In phase 3 non-constant arguments can not be checked in call to printf
-functions. These packages will be skipped and should be manually fixed
-first. Let's take svgo planets as an example:
+1) In phase 3 (format verbs), non-constant arguments can not be checked
+in call to printf functions. These packages will be skipped and should
+be manually fixed first. Let's take svgo planets as an example:
 
   github.com/ajstarks/svgo/planets -> github.com/stanim/svgotest/planets:
   - Empty "github.com/stanim/svgotest/planets" ...

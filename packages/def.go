@@ -8,7 +8,7 @@
 */
 
 /*
-Package packages provides the basic utilities for type conversion.
+Package packages provides the basic utilities for any type conversion.
 There are the following main functions ...
 
 Convert
