@@ -1,5 +1,6 @@
 // (c) 2015 Stani Michiels
-// printast prints the ast tree to stdout of a single file
+
+// Command printast prints the ast tree to stdout of a single file
 package main
 
 import (

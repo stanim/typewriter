@@ -7,6 +7,26 @@
   - what is needed for float32
 */
 
+/*
+Package packages provides the basic utilities for type conversion.
+There are the following main functions ...
+
+Convert
+
+During this phase no errors should occur.
+
+Fix
+
+Fix type conflicts. If an error occur during this phase, the command
+(e.g. gofloat) should quit immediately.
+
+Format
+
+Convert format arguments in calls to printf functions. If an error
+occurs during this phase, the package should be skipped.
+
+
+*/
 package packages
 
 import (

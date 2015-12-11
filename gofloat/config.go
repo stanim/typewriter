@@ -27,32 +27,34 @@ type Patch struct {
 
 // Config can be applied to multiple destination repositories.
 type Config struct {
-	Footer     map[string][]byte
-	FormatVar  packages.Set
-	FormatFunc map[string]string
-	From       string
-	FromType   string
-	Header     []byte
-	Patches    map[string][]Patch // patches by filename
-	Printf     map[string]int
-	ReadMe     []byte
-	Skip       packages.Skip
-	To         string
+	Footer       map[string][]byte
+	FormatVar    packages.Set
+	FormatFunc   map[string]string
+	From         string
+	FromType     string
+	Header       []byte
+	LogConflicts bool
+	Patches      map[string][]Patch // patches by filename
+	Printf       map[string]int
+	ReadMe       []byte
+	Skip         packages.Skip
+	To           string
 }
 
 type configData struct {
-	Footer     map[string][]string
-	FormatVar  []string // allow non-constant format in call to FormatFunc
-	FormatFunc map[string]string
-	From       string
-	FromType   string
-	Header     []string
-	Patches    map[string][]Patch
-	Printf     map[string]int
-	ReadMe     []string
-	Skip       map[string][]string
-	To         string
-	ToType     string
+	Footer       map[string][]string
+	FormatVar    []string // allow non-constant format in call to FormatFunc
+	FormatFunc   map[string]string
+	From         string
+	FromType     string
+	Header       []string
+	LogConflicts bool
+	Patches      map[string][]Patch
+	Printf       map[string]int
+	ReadMe       []string
+	Skip         map[string][]string
+	To           string
+	ToType       string
 }
 
 type data struct {
@@ -102,6 +104,7 @@ func Open(path string) ([]Repository, Config, error) {
 				strings.Join(lines, "\n") + "\n")
 	}
 	cfg.Header = []byte(strings.Join(cfgd.Header, "\n"))
+	cfg.LogConflicts = cfgd.LogConflicts
 	cfg.Patches = cfgd.Patches
 	if len(cfgd.Printf) == 0 {
 		cfg.Printf = map[string]int{

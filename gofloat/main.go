@@ -1,6 +1,119 @@
-// gofloat converts code which uses ints to floats.
-// It is written for svgo, but might work for other projects as well.
+/*
+The gofloat command translates any go source code from ints to floats.
+It is written with svgo in mind, but might work for other projects as
+well.
 
+Usage
+
+Install it first:
+
+  $ cd gofloat
+  $ go install
+
+Apply it it to a configuration file. For example to convert svgo from
+ints to floats:
+
+  $ gofloat svgo.json
+  Open "svgo.json" ...
+  github.com/ajstarks/svgo -> github.com/stanim/svgotest:
+  - Empty "github.com/stanim/svgotest" ...
+  - Convert type from "int" to "float64" ...
+  - Fix type conflicts ...
+	... no type conflicts found.
+  - Format "github.com/stanim/svgotest" ...
+  formatter.fv =  false doc
+  formatter.fv =  true svg
+  doc.go
+  svg.go
+  - Applied 13 patches to "github.com/stanim/svgotest" ...
+  - Copy non-go files of "github.com/stanim/svgotest" ...
+  - OK
+
+  github.com/ajstarks/svgo/barchart -> github.com/stanim/svgotest/barchart:
+  - Empty "github.com/stanim/svgotest/barchart" ...
+  - Convert type from "int" to "float64" ...
+  - Fix type conflicts ...
+	+ /home/stani/Labo/go/src/github.com/stanim/svgotest/barchart/barchart.go:384:8: invalid operation: operator % not defined for i (variable of type float64)
+	+ /home/stani/Labo/go/src/github.com/stanim/svgotest/barchart/barchart.go:424:5: cannot compare l <= n (mismatched types int and float64)
+	+ /home/stani/Labo/go/src/github.com/stanim/svgotest/barchart/barchart.go:428:13: invalid argument: index n - 3 (value of type float64) must be integer
+	... fixed 3 type conflicts.
+  - Format "github.com/stanim/svgotest/barchart" ...
+  formatter.fv =  true barchart
+  barchart.go
+  - Copy non-go files of "github.com/stanim/svgotest/barchart" ...
+  - OK
+
+  ...
+
+  github.com/ajstarks/svgo/planets -> github.com/stanim/svgotest/planets:
+  - Empty "github.com/stanim/svgotest/planets" ...
+  - Convert type from "int" to "float64" ...
+  - Fix type conflicts ...
+	... no type conflicts found.
+  - Format "github.com/stanim/svgotest/planets" ...
+  formatter.fv =  false planets
+	Please fix: /home/stani/Labo/go/src/github.com/stanim/svgotest/planets/planets.go:122:65: can't check non-constant format "tfmt" in call to Sprintf.
+  - SKIP
+
+  ...
+
+Output
+
+If a package is succesfully converted it will finish with an 'OK'.
+Process
+
+It uses 4 phases:
+
+1) Convert types: all int types are converted to floats.
+
+2) Fix all type conflicts:
+for example make sure that all slice indices are integers.
+
+3) Fix format arguments in printf functions.
+
+4) Apply patches and add header/footer if necessary.
+
+See the package 'packages' for more information.
+
+Limitations
+
+1) In phase 3 non-constant arguments can not be checked in call to printf
+functions. These packages will be skipped and should be manually fixed
+first. It uses the same internal code of 'go vet', which can be used
+to find all lines which need to be fixed. Let's take svgo planets as
+an example:
+
+  go tool vet -v planets.go
+
+This gives the following output:
+
+  Checking file planets.go
+  planets.go:122: can't check non-constant format in call to Sprintf
+
+The following code blocks the conversion and needs to be fixed:
+
+  tfmt := "fill:white; font-size:%dpx; font-family:Calibri,sans; text-anchor:middle"
+  ...
+  canvas.Text(px+po, y-labeloc-10, "You are here", fmt.Sprintf(tfmt, fontsize))
+
+A fix is to declare 'tfmt' not as a variable, but as a constant.
+This also appears more correct anyhow:
+
+  const tfmt = "fill:white; font-size:%dpx; font-family:Calibri,sans; text-anchor:middle"
+  ...
+  canvas.Text(px+po, y-labeloc-10, "You are here", fmt.Sprintf(tfmt, fontsize))
+
+Often these files are easy to convert by hand. However if you want
+automatic conversion with the gofloat command by hand, it is important
+that all formats in printf functions are constants.
+
+If the format does not contain '%d' (int), which needs to be converted
+to '%f' (float), it is safe to ignore this issue. By adding the
+filename to the FormatVar list in the json configuration file, gofloat
+will not perform this check.
+
+2) Converting to float32 is not supported.
+*/
 package main
 
 //TODO: check do the visitors need all their fields
@@ -69,7 +182,7 @@ func dir(fromDir string, cfg Config, repo Repository,
 			return err
 		}
 		pkgs.SetSnippets(pkgsSnippets)
-		n, err = pkgs.Fix(cfg.FromType, repo.ToType)
+		n, err = pkgs.Fix(cfg.FromType, repo.ToType, cfg.LogConflicts)
 		if err != nil {
 			logg.Printf("- Error during fixing type conflicts")
 			return err

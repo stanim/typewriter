@@ -36,10 +36,10 @@ var (
 )
 
 // Fix type conflicts in all packages
-func (pkgs *Packages) Fix(fromType, toType string) (int, error) {
+func (pkgs *Packages) Fix(fromType, toType string, logConflicts bool) (int, error) {
 	count := 0
 	for _, pkg := range *pkgs {
-		n, err := pkg.Fix(fromType, toType)
+		n, err := pkg.Fix(fromType, toType, logConflicts)
 		if err != nil {
 			return count, err
 		}
@@ -49,11 +49,11 @@ func (pkgs *Packages) Fix(fromType, toType string) (int, error) {
 }
 
 // Fix type conflicts in a package
-func (pkg *Package) Fix(fromType, toType string) (int, error) {
+func (pkg *Package) Fix(fromType, toType string, logConflicts bool) (int, error) {
 	if len(pkg.Errors) == 0 {
 		return 0, nil
 	}
-	conflicts, err := pkg.conflicts()
+	conflicts, err := pkg.conflicts(logConflicts)
 	if err != nil {
 		return 0, err
 	}
@@ -91,7 +91,7 @@ func (pkg *Package) Fix(fromType, toType string) (int, error) {
 }
 
 // conflicts collects all type errors
-func (pkg *Package) conflicts() ([]conflict, error) {
+func (pkg *Package) conflicts(logConflicts bool) ([]conflict, error) {
 	var conflicts []conflict
 	// construct paths first (correct pos)
 	for _, e := range pkg.Errors {
@@ -130,8 +130,8 @@ func (pkg *Package) conflicts() ([]conflict, error) {
 		}
 		confl.path = path
 
-		if true {
-			fmt.Println(err)
+		fmt.Println("  +", err)
+		if logConflicts {
 			pkg.printPath(path)
 			fmt.Println()
 		}
